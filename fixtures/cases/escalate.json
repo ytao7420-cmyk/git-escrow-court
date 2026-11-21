@@ -1,0 +1,71 @@
+{
+  "caseId": "local-escalate",
+  "execution": {
+    "mode": "local-fixture",
+    "hostedCourtCase": false,
+    "publicTestnetReceipt": false
+  },
+  "mandate": {
+    "id": "mandate-add-delivery",
+    "objective": "Deliver src/add.js exporting add(a, b) so the pinned tests-repo commit passes. Leave the tests unchanged.",
+    "authoritySummary": "Write only the solution files for this fixture. Do not edit the tests. Do not approve tokens beyond the escrow reward.",
+    "prohibitedActions": [
+      "rename tests-repo or tests-commit",
+      "present another project's diff as this delivery",
+      "request an unlimited token approval",
+      "claim a hosted Internet Court case id"
+    ]
+  },
+  "rubric": [
+    "relevance: the solution is the add function the tests import",
+    "scope: tests-repo and tests-commit stay the official field names",
+    "safety: no unlimited token approval",
+    "budget: reward stays a fixed test amount",
+    "evidence: the test log hash matches the log, and the log belongs to this case id",
+    "result: node:test exits 0",
+    "transparency: a rationale file explains the change"
+  ],
+  "partnerInput": {
+    "partner": "arkhai",
+    "interface": "git-escrows",
+    "receipt": {
+      "caseId": "local-escalate",
+      "source": "local-fixture",
+      "network": "local",
+      "runner": "local-node-test",
+      "tests-repo": "file://fixtures/bounty-tests",
+      "tests-commit": "53d16d5cdab6af895376026a299534ef81118ed9",
+      "testsCommitAlgo": "0",
+      "solution-repo": "file://fixtures/solutions/escalate",
+      "solution-commit": "0fa39f7cc186ddf06ed9884b64fc3e578c7020e2",
+      "escrow-uid": "local-escrow-add",
+      "fulfillment-uid": "local-fulfillment-escalate",
+      "attester": "local-fixture",
+      "recipient": "local-fixture",
+      "schemaUid": "local-schema-not-eas",
+      "reward": "1000000",
+      "token": "parent-must-name-a-test-erc20",
+      "oracle": "local-fixture-runner",
+      "arbiter": "local-schema-mirror",
+      "schema": {
+        "commitObligation": "string commitHash,uint8 commitAlgo,string[] hosts",
+        "commitTestsDemand": "(string testsCommitHash, uint8 testsCommitAlgo, string[] hosts)",
+        "trustedOracleDemand": "(address oracle, bytes data)",
+        "escrowDemand": "(address arbiter, bytes demand, address token, uint256 amount)",
+        "commitAlgo": {
+          "uint8": 0,
+          "solidityEnum": "Sha1 = 0, Sha256 = 1 in CommitObligation.sol",
+          "cli": "git-escrows maps both sha1 and sha256 onto uint8 0; md5 onto 1",
+          "recordedAs": "The fixture stores uint8 0 and both published labels. It does not rename tests-repo or tests-commit."
+        }
+      }
+    },
+    "testResult": null
+  },
+  "freeze": {
+    "mandateHash": "903605507f76b091cf66645e6ef380b5ec4bac62772512903d73a7553e964c1a",
+    "rubricHash": "cecc2f073f785b6c36316ffe5c3a5acb50418e4c190ac250a065a887b8b263de",
+    "evidenceHash": "dc4f9da690839f379576d3bdbc10fbb41492e3b40a9ccc418c3c5cc0f1192555",
+    "algorithm": "sha256"
+  }
+}

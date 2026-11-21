@@ -1,0 +1,91 @@
+{
+  "purpose": "One review_case of a third-party Base Sepolia fulfillment. Expected decision is escalate.",
+  "signed": false,
+  "broadcast": false,
+  "contractSourceSha256": "4bd50473ac9a0a0639ad051a1fa3687d025d1e4588913b2dff66cafbcc57758e",
+  "expectedDecision": "escalate",
+  "expectedViolation": "missing-test-result",
+  "thirdParty": true,
+  "hostedCourtCase": false,
+  "caseId": "public-0726369d528e",
+  "attestationUid": "0x0726369d528e02356e76a081a5c164c217cd219f47a7217811530107face2c7b",
+  "baseSepoliaTx": "0x41758082c771de433f040ddaa216aba688582b761c9f195f1e54a74f4385e133",
+  "argumentSha256": "084d7ad5d0f1b71766dd6f462207b62ddb8ac0a249790aaed5b134a51aaee942",
+  "argument": {
+    "caseId": "public-0726369d528e",
+    "execution": {
+      "createdByThisProject": false,
+      "hostedCourtCase": false,
+      "mode": "public-read",
+      "publicTestnetReceipt": true,
+      "txHash": "0x41758082c771de433f040ddaa216aba688582b761c9f195f1e54a74f4385e133"
+    },
+    "freeze": {
+      "algorithm": "sha256",
+      "evidenceHash": "4f1b51c872e0c9452e762b574a44c50c7acc26f26d2a0025adb91fcbd259be8f",
+      "mandateHash": "4e372900391eb9695bb82c84206770cf855ec7ace7bc36548c2809f9196b5fc7",
+      "rubricHash": "2fac5a3238548e1103adbe5673b051d7987bc3bf747cc1e3f8716c45ac287309"
+    },
+    "mandate": {
+      "authoritySummary": "Read-only. Do not collect the escrow and do not claim the attestation was created here.",
+      "id": "mandate-public-fulfillment",
+      "objective": "Read one public git-escrow fulfillment and say whether the same attestation also contains the tests-repo.",
+      "prohibitedActions": [
+        "rename tests-repo or tests-commit",
+        "invent a tests-repo that is not in the attestation",
+        "claim an Internet Court hosted case id"
+      ]
+    },
+    "partnerInput": {
+      "interface": "git-escrows",
+      "partner": "arkhai",
+      "receipt": {
+        "arbiter": "0xD2c1A86BBa27143bc43C9A2Ef23BD1EC8B4C568F",
+        "attester": "0x03d2591DfDf75611AdE94A9a80af61F9BcBfc4e2",
+        "caseId": "public-0726369d528e",
+        "chainId": "84532",
+        "commitAlgo": "0",
+        "escrow-uid": "0xaeedea1859650ca34ff97bae7ef94118d8522b5652ea9b33ef7280e742ee3228",
+        "fulfillment-uid": "0x0726369d528e02356e76a081a5c164c217cd219f47a7217811530107face2c7b",
+        "network": "base-sepolia",
+        "oracle": "0x84Fa6d4087B267e2D1B158Ffa277338Da725746b",
+        "recipient": "0x51A257aAF108c9b0A3e140519bD14e5B4bf15e47",
+        "reward": "1",
+        "schema": {
+          "commitObligation": "string commitHash,uint8 commitAlgo,string[] hosts",
+          "source": "CommitObligation.getSchema on the network named in the receipt"
+        },
+        "schemaUid": "0x28eb84f1eb9a9e6954693457db431a1db30e9e077b08238d6f424e2e643201ce",
+        "solution-commit": "164d6a980a19955e9e712f6824951c8d30256091",
+        "solution-repo": "https://github.com/mlegls/git-escrow-bun-test-fulfillment.git",
+        "source": "public-attestation",
+        "tests-commit": "3680b366c331d145a1bbfd98fc89bb5d0e0225cb",
+        "tests-repo": "https://github.com/mlegls/git-escrow-bun-test-demand.git",
+        "token": "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+      },
+      "testResult": null
+    },
+    "rubric": [
+      "evidence: solution-repo and solution-commit come from CommitObligation hosts and commitHash",
+      "evidence: tests-repo stays absent when the attestation does not contain it",
+      "result: a fulfillment alone cannot count as a passed test suite"
+    ]
+  },
+  "innerTxDataSha256": "98f8e31fdc174d2f58013fe51e3bd0cb50029c7be23c0a134d84c66b030befc9",
+  "method": "review_case",
+  "chainId": 61999,
+  "value": "0x0",
+  "consensus": "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
+  "from": "0xcd1dabf73cc80edee8ba664c34a5d636b6e407f9",
+  "feeCapWei": "1000000000000000",
+  "recipientNote": "addTransaction recipient is the deployed GitEscrowCourt address, supplied after the deploy hash is known.",
+  "sdkPackage": "genlayer-js",
+  "sdkVersion": "1.1.8",
+  "outerSelector": "0x27241a99",
+  "outerMethod": "addTransaction(address,address,uint256,uint256,bytes)",
+  "paramTypes": "address,address,uint256,uint256,bytes",
+  "abiInputCount": 5,
+  "fallbackSelector": "0xe71d5196",
+  "fallbackUsed": false,
+  "estimateIsNotAbiEvidence": true
+}

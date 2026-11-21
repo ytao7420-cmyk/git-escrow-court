@@ -1,0 +1,36 @@
+{
+  "tests-repo": "file://fixtures/bounty-tests",
+  "tests-commit": "53d16d5cdab6af895376026a299534ef81118ed9",
+  "cases": [
+    {
+      "file": "fixtures/cases/pass.json",
+      "caseId": "local-pass",
+      "solution-commit": "98e0088d28e11df5df795d49136325ef257234c7",
+      "evidenceHash": "a813729bafaf56438dfceaac4cb3db7c0b7bb88aec17a4dd4bd53c6c8a423126"
+    },
+    {
+      "file": "fixtures/cases/warn.json",
+      "caseId": "local-warn",
+      "solution-commit": "df03f5e7d0bb0e4c0a2ed83944a5aa95ec12ba5b",
+      "evidenceHash": "29f13ac76b42b15f42ba1fb80f9478323cfbd2a1fac724e9d2d4ffd5766778fd"
+    },
+    {
+      "file": "fixtures/cases/constrain.json",
+      "caseId": "local-constrain",
+      "solution-commit": "ea266eb67fcfb9b69eefc75682adce6bab3791ab",
+      "evidenceHash": "ab136ed46ba28a9ab4e78351ed41accdc3ce1d363310f73e830c2ec768aa35f3"
+    },
+    {
+      "file": "fixtures/cases/revoke.json",
+      "caseId": "local-revoke",
+      "solution-commit": "e74864be4364f1ad18230549795208a39dda70ef",
+      "evidenceHash": "2707ab8de880ca9bb2776682681686d3568f500fff2887c9071eb48e3a0e2255"
+    },
+    {
+      "file": "fixtures/cases/escalate.json",
+      "caseId": "local-escalate",
+      "solution-commit": "0fa39f7cc186ddf06ed9884b64fc3e578c7020e2",
+      "evidenceHash": "dc4f9da690839f379576d3bdbc10fbb41492e3b40a9ccc418c3c5cc0f1192555"
+    }
+  ]
+}

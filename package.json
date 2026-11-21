@@ -1,0 +1,43 @@
+{
+  "name": "git-escrow-court",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0 --port 43123",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0 --port 43123",
+    "lint": "eslint",
+    "fixtures": "python3 scripts/build_fixtures.py",
+    "prepare:runner": "python3 scripts/prepare_runner.py",
+    "test:direct": "pytest tests/direct -v --tb=short",
+    "test:evm": "hardhat test",
+    "test:node": "node --experimental-strip-types --test tests/node/*.test.mjs tests/node/*.test.ts",
+    "test:marks": "node scripts/measure-marks.mjs",
+    "test:integration": "python3 scripts/run_integration.py",
+    "test": "npm run test:node && npm run test:evm && npm run test:direct"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.5.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "genlayer-js": "1.1.8",
+    "next": "^15.5.29",
+    "react": "^19.1.2",
+    "react-dom": "^19.1.2",
+    "tailwind-merge": "^3.7.1",
+    "viem": "^2.58.4"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@nomicfoundation/hardhat-viem": "^2.1.2",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^15.5.29",
+    "hardhat": "^2.26.5",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,52 @@
+import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+
+const SOURCE_SHA = "4bd50473ac9a0a0639ad051a1fa3687d025d1e4588913b2dff66cafbcc57758e";
+
+test("frozen deploy payload is unchanged and matches the contract source", () => {
+  const source = readFileSync("contracts/git_escrow_court.py");
+  const payload = JSON.parse(readFileSync("fixtures/public/unsigned-deploy.json", "utf8"));
+  assert.equal(createHash("sha256").update(source).digest("hex"), SOURCE_SHA);
+  assert.equal(payload.sourceSha256, SOURCE_SHA);
+  assert.equal(payload.chainId, 61999);
+  assert.equal(payload.chainIdHex, "0xf22f");
+  assert.equal(payload.value, "0x0");
+  assert.equal(payload.to, "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575");
+  assert.equal(payload.selector, "0x27241a99");
+  assert.equal(payload.calldataBytes, 14948);
+  assert.equal((payload.data.length - 2) / 2, 14948);
+  assert.equal(payload.data.startsWith("0x27241a99"), true);
+  assert.equal(payload.fallbackUsed, false);
+  assert.equal(payload.abiInputCount, 5);
+  assert.equal(payload.feeCapWei, "1000000000000000");
+  assert.equal(payload.from, "0xcd1dabf73cc80edee8ba664c34a5d636b6e407f9");
+});
+
+test("deploy button stays closed while the old selector is pending in MetaMask", () => {
+  const panel = readFileSync("src/components/wallet-panel.tsx", "utf8");
+  const page = readFileSync("src/app/wallet/page.tsx", "utf8");
+  const shown = `${panel}\n${page}`;
+  assert.equal(panel.includes("没有发送交易"), false);
+  assert.equal(panel.includes("按钮已恢复"), false);
+  assert.equal(panel.includes("已部署，禁止再次部署"), true);
+  assert.equal(shown.includes("0x37383a73306B8F31d9158C3419C29EED856cc1Bc"), true);
+  assert.equal(shown.includes("0x3245ee1f95c3aad8529a0732b105be5d43fc52c6c726807a18c24241b4d3d76f"), true);
+  assert.equal(panel.includes('method: "eth_sendTransaction"'), false);
+  assert.equal(shown.includes("0x27241a99"), true);
+  assert.equal(panel.includes("0xe71d5196"), false);
+  assert.equal(panel.includes('label="to"'), true);
+  assert.equal(panel.includes('label="selector"'), true);
+  assert.equal(panel.includes('label="dataBytes"'), true);
+  assert.equal(panel.includes('label="sourceSHA"'), true);
+  assert.equal(panel.includes('label="maxFee"'), true);
+  assert.equal(page.includes("unsigned-deploy.json"), true);
+  const submit = readFileSync("src/components/case-submit.tsx", "utf8");
+  const chain = readFileSync("src/app/api/chain-record/route.ts", "utf8");
+  assert.equal(submit.includes("eth_sendTransaction"), false);
+  assert.equal(submit.includes("已写入，禁止再次提交"), true);
+  assert.equal(chain.includes("get_record"), true);
+  assert.equal(chain.includes("list_cases"), true);
+  assert.equal(page.includes("deployRefusal"), true);
+});
