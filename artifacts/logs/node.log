@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: recorded pass case keeps git-escrow field names
+ok 1 - recorded pass case keeps git-escrow field names
+  ---
+  duration_ms: 1.025772
+  type: 'test'
+  ...
+# Subtest: recorded warn case keeps git-escrow field names
+ok 2 - recorded warn case keeps git-escrow field names
+  ---
+  duration_ms: 0.193133
+  type: 'test'
+  ...
+# Subtest: recorded constrain case keeps git-escrow field names
+ok 3 - recorded constrain case keeps git-escrow field names
+  ---
+  duration_ms: 0.155761
+  type: 'test'
+  ...
+# Subtest: recorded revoke case keeps git-escrow field names
+ok 4 - recorded revoke case keeps git-escrow field names
+  ---
+  duration_ms: 0.101874
+  type: 'test'
+  ...
+# Subtest: recorded escalate case keeps git-escrow field names
+ok 5 - recorded escalate case keeps git-escrow field names
+  ---
+  duration_ms: 0.125747
+  type: 'test'
+  ...
+# Subtest: pass and revoke disagree on the real test exit
+ok 6 - pass and revoke disagree on the real test exit
+  ---
+  duration_ms: 0.162549
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 48.550917

@@ -1,0 +1,84 @@
+{
+  "caseId": "local-revoke",
+  "execution": {
+    "mode": "local-fixture",
+    "hostedCourtCase": false,
+    "publicTestnetReceipt": false
+  },
+  "mandate": {
+    "id": "mandate-add-delivery",
+    "objective": "Deliver src/add.js exporting add(a, b) so the pinned tests-repo commit passes. Leave the tests unchanged.",
+    "authoritySummary": "Write only the solution files for this fixture. Do not edit the tests. Do not approve tokens beyond the escrow reward.",
+    "prohibitedActions": [
+      "rename tests-repo or tests-commit",
+      "present another project's diff as this delivery",
+      "request an unlimited token approval",
+      "claim a hosted Internet Court case id"
+    ]
+  },
+  "rubric": [
+    "relevance: the solution is the add function the tests import",
+    "scope: tests-repo and tests-commit stay the official field names",
+    "safety: no unlimited token approval",
+    "budget: reward stays a fixed test amount",
+    "evidence: the test log hash matches the log, and the log belongs to this case id",
+    "result: node:test exits 0",
+    "transparency: a rationale file explains the change"
+  ],
+  "partnerInput": {
+    "partner": "arkhai",
+    "interface": "git-escrows",
+    "receipt": {
+      "caseId": "local-revoke",
+      "source": "local-fixture",
+      "network": "local",
+      "runner": "local-node-test",
+      "tests-repo": "file://fixtures/bounty-tests",
+      "tests-commit": "53d16d5cdab6af895376026a299534ef81118ed9",
+      "testsCommitAlgo": "0",
+      "solution-repo": "file://fixtures/solutions/revoke",
+      "solution-commit": "e74864be4364f1ad18230549795208a39dda70ef",
+      "escrow-uid": "local-escrow-add",
+      "fulfillment-uid": "local-fulfillment-revoke",
+      "attester": "local-fixture",
+      "recipient": "local-fixture",
+      "schemaUid": "local-schema-not-eas",
+      "reward": "1000000",
+      "token": "parent-must-name-a-test-erc20",
+      "oracle": "local-fixture-runner",
+      "arbiter": "local-schema-mirror",
+      "schema": {
+        "commitObligation": "string commitHash,uint8 commitAlgo,string[] hosts",
+        "commitTestsDemand": "(string testsCommitHash, uint8 testsCommitAlgo, string[] hosts)",
+        "trustedOracleDemand": "(address oracle, bytes data)",
+        "escrowDemand": "(address arbiter, bytes demand, address token, uint256 amount)",
+        "commitAlgo": {
+          "uint8": 0,
+          "solidityEnum": "Sha1 = 0, Sha256 = 1 in CommitObligation.sol",
+          "cli": "git-escrows maps both sha1 and sha256 onto uint8 0; md5 onto 1",
+          "recordedAs": "The fixture stores uint8 0 and both published labels. It does not rename tests-repo or tests-commit."
+        }
+      }
+    },
+    "testResult": {
+      "caseId": "local-revoke",
+      "passed": false,
+      "exitCode": 1,
+      "framework": "node:test",
+      "runner": "local-node-test",
+      "docker": "not-used",
+      "log": "framework=node:test\nexit=1\nrawSha256=8e6d967ebb27450e474874fca8d0eb21f022a71223d5ab4002e9880e6c76aaef\nnormalized=recorded-run",
+      "logSha256": "0ae383685dcdf9da1d1d3e6010f1083ddd6e1beb6e0246991bac3ff289539b15",
+      "rawLog": "TAP version 13\n# Subtest: adds two integers\nnot ok 1 - adds two integers\n  ---\n  duration_ms: 1.084422\n  type: 'test'\n  location: '/tmp/escrow-node-dfbg0f0n/test/add.test.mjs:5:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    -1 !== 5\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 5\n  actual: -1\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///tmp/escrow-node-dfbg0f0n/test/add.test.mjs:6:10)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.start (node:internal/test_runner/test:944:17)\n    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 0\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 45.690356\n",
+      "rawSha256": "8e6d967ebb27450e474874fca8d0eb21f022a71223d5ab4002e9880e6c76aaef",
+      "warnings": [],
+      "unlimitedApproval": false
+    }
+  },
+  "freeze": {
+    "mandateHash": "903605507f76b091cf66645e6ef380b5ec4bac62772512903d73a7553e964c1a",
+    "rubricHash": "cecc2f073f785b6c36316ffe5c3a5acb50418e4c190ac250a065a887b8b263de",
+    "evidenceHash": "2707ab8de880ca9bb2776682681686d3568f500fff2887c9071eb48e3a0e2255",
+    "algorithm": "sha256"
+  }
+}

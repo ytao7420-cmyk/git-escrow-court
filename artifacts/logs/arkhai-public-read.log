@@ -1,0 +1,66 @@
+sepolia commit logs 0 errors 0
+sepolia escrow logs 1 errors 0
+base-sepolia commit logs 19 errors 0
+{
+  "fulfillments": 19,
+  "escrows": 1,
+  "hosts": [
+    {
+      "network": "base-sepolia",
+      "chainId": 84532,
+      "contract": "0x03d2591DfDf75611AdE94A9a80af61F9BcBfc4e2",
+      "schemaUid": "0x28eb84f1eb9a9e6954693457db431a1db30e9e077b08238d6f424e2e643201ce",
+      "uid": "0x0726369d528e02356e76a081a5c164c217cd219f47a7217811530107face2c7b",
+      "tx": "0x41758082c771de433f040ddaa216aba688582b761c9f195f1e54a74f4385e133",
+      "block": "36647405",
+      "attester": "0x03d2591DfDf75611AdE94A9a80af61F9BcBfc4e2",
+      "recipient": "0x51A257aAF108c9b0A3e140519bD14e5B4bf15e47",
+      "refUID": "0xaeedea1859650ca34ff97bae7ef94118d8522b5652ea9b33ef7280e742ee3228",
+      "commitHash": "164d6a980a19955e9e712f6824951c8d30256091",
+      "commitAlgo": 0,
+      "hosts": [
+        "https://github.com/mlegls/git-escrow-bun-test-fulfillment.git"
+      ],
+      "createdByThisProject": false,
+      "hostedCourtCase": false
+    },
+    {
+      "network": "base-sepolia",
+      "chainId": 84532,
+      "contract": "0x03d2591DfDf75611AdE94A9a80af61F9BcBfc4e2",
+      "schemaUid": "0x28eb84f1eb9a9e6954693457db431a1db30e9e077b08238d6f424e2e643201ce",
+      "uid": "0x78991c6c0ffbff313fd6dfc2ca8f099953f664d4db6c95251f8872fc192fee92",
+      "tx": "0x2c22d84a74b72f94bb3dffccb7af67ec2323e67de9257ca3b2b0fccc5939b27d",
+      "block": "36647653",
+      "attester": "0x03d2591DfDf75611AdE94A9a80af61F9BcBfc4e2",
+      "recipient": "0x51A257aAF108c9b0A3e140519bD14e5B4bf15e47",
+      "refUID": "0xaeedea1859650ca34ff97bae7ef94118d8522b5652ea9b33ef7280e742ee3228",
+      "commitHash": "164d6a980a19955e9e712f6824951c8d30256091",
+      "commitAlgo": 0,
+      "hosts": [
+        "https://github.com/mlegls/git-escrow-bun-test-fulfillment.git"
+      ],
+      "createdByThisProject": false,
+      "hostedCourtCase": false
+    },
+    {
+      "network": "base-sepolia",
+      "chainId": 84532,
+      "contract": "0x03d2591DfDf75611AdE94A9a80af61F9BcBfc4e2",
+      "schemaUid": "0x28eb84f1eb9a9e6954693457db431a1db30e9e077b08238d6f424e2e643201ce",
+      "uid": "0x672fca916b4a0526d32df9b386c614ee03adc5e9946360d473493658d2536723",
+      "tx": "0xfa95eed1f59467719f8136406efd8ce3a1acbf9e1db944ba570b9e1beb39497b",
+      "block": "36970224",
+      "attester": "0x03d2591DfDf75611AdE94A9a80af61F9BcBfc4e2",
+      "recipient": "0x3e49b766D8ccf23b66588B94302579525b0A30AA",
+      "refUID": "0xe55884063e4bbdd7d70eb4387d74c08a82e0a3a6df3c28e25de61a05dbe772d0",
+      "commitHash": "8dca6039f487608210a50f1fabdd21f2c6422c08",
+      "commitAlgo": 0,
+      "hosts": [
+        "https://github.com/thinhnx-var/solution-repo-bob"
+      ],
+      "createdByThisProject": false,
+      "hostedCourtCase": false
+    }
+  ]
+}

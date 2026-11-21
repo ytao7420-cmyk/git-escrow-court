@@ -1,0 +1,8 @@
+
+
+  CommitSchemaMirror
+    ✔ round-trips tests-repo and tests-commit with the git-escrows ABI (358ms)
+
+
+  1 passing (360ms)
+

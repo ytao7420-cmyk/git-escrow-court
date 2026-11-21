@@ -1,0 +1,11 @@
+# Local GLSim only. Accounts are the genlayer-test defaults created in memory.
+# Do not put a private key in this file.
+networks:
+  default: localnet
+  localnet:
+    url: http://127.0.0.1:40117/api
+    leader_only: false
+paths:
+  contracts: contracts
+  artifacts: artifacts/gltest
+environment: env.example

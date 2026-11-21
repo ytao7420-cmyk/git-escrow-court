@@ -1,0 +1,86 @@
+{
+  "caseId": "local-warn",
+  "execution": {
+    "mode": "local-fixture",
+    "hostedCourtCase": false,
+    "publicTestnetReceipt": false
+  },
+  "mandate": {
+    "id": "mandate-add-delivery",
+    "objective": "Deliver src/add.js exporting add(a, b) so the pinned tests-repo commit passes. Leave the tests unchanged.",
+    "authoritySummary": "Write only the solution files for this fixture. Do not edit the tests. Do not approve tokens beyond the escrow reward.",
+    "prohibitedActions": [
+      "rename tests-repo or tests-commit",
+      "present another project's diff as this delivery",
+      "request an unlimited token approval",
+      "claim a hosted Internet Court case id"
+    ]
+  },
+  "rubric": [
+    "relevance: the solution is the add function the tests import",
+    "scope: tests-repo and tests-commit stay the official field names",
+    "safety: no unlimited token approval",
+    "budget: reward stays a fixed test amount",
+    "evidence: the test log hash matches the log, and the log belongs to this case id",
+    "result: node:test exits 0",
+    "transparency: a rationale file explains the change"
+  ],
+  "partnerInput": {
+    "partner": "arkhai",
+    "interface": "git-escrows",
+    "receipt": {
+      "caseId": "local-warn",
+      "source": "local-fixture",
+      "network": "local",
+      "runner": "local-node-test",
+      "tests-repo": "file://fixtures/bounty-tests",
+      "tests-commit": "53d16d5cdab6af895376026a299534ef81118ed9",
+      "testsCommitAlgo": "0",
+      "solution-repo": "file://fixtures/solutions/warn",
+      "solution-commit": "df03f5e7d0bb0e4c0a2ed83944a5aa95ec12ba5b",
+      "escrow-uid": "local-escrow-add",
+      "fulfillment-uid": "local-fulfillment-warn",
+      "attester": "local-fixture",
+      "recipient": "local-fixture",
+      "schemaUid": "local-schema-not-eas",
+      "reward": "1000000",
+      "token": "parent-must-name-a-test-erc20",
+      "oracle": "local-fixture-runner",
+      "arbiter": "local-schema-mirror",
+      "schema": {
+        "commitObligation": "string commitHash,uint8 commitAlgo,string[] hosts",
+        "commitTestsDemand": "(string testsCommitHash, uint8 testsCommitAlgo, string[] hosts)",
+        "trustedOracleDemand": "(address oracle, bytes data)",
+        "escrowDemand": "(address arbiter, bytes demand, address token, uint256 amount)",
+        "commitAlgo": {
+          "uint8": 0,
+          "solidityEnum": "Sha1 = 0, Sha256 = 1 in CommitObligation.sol",
+          "cli": "git-escrows maps both sha1 and sha256 onto uint8 0; md5 onto 1",
+          "recordedAs": "The fixture stores uint8 0 and both published labels. It does not rename tests-repo or tests-commit."
+        }
+      }
+    },
+    "testResult": {
+      "caseId": "local-warn",
+      "passed": true,
+      "exitCode": 0,
+      "framework": "node:test",
+      "runner": "local-node-test",
+      "docker": "not-used",
+      "log": "framework=node:test\nexit=0\nrawSha256=60a376e94629213af81d3af368f1c219abb80f2a087aa80d9286b98be050393a\nnormalized=recorded-run",
+      "logSha256": "9a38a1bdc2a74ec97c84c597834930c12e58eeb925776ac508070fc02245fcf5",
+      "rawLog": "TAP version 13\n# Subtest: adds two integers\nok 1 - adds two integers\n  ---\n  duration_ms: 0.479001\n  type: 'test'\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 45.228919\n",
+      "rawSha256": "60a376e94629213af81d3af368f1c219abb80f2a087aa80d9286b98be050393a",
+      "warnings": [
+        "solution has no RATIONALE.md"
+      ],
+      "unlimitedApproval": false
+    }
+  },
+  "freeze": {
+    "mandateHash": "903605507f76b091cf66645e6ef380b5ec4bac62772512903d73a7553e964c1a",
+    "rubricHash": "cecc2f073f785b6c36316ffe5c3a5acb50418e4c190ac250a065a887b8b263de",
+    "evidenceHash": "29f13ac76b42b15f42ba1fb80f9478323cfbd2a1fac724e9d2d4ffd5766778fd",
+    "algorithm": "sha256"
+  }
+}
