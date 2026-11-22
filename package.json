@@ -11,7 +11,7 @@
     "prepare:runner": "python3 scripts/prepare_runner.py",
     "test:direct": "pytest tests/direct -v --tb=short",
     "test:evm": "hardhat test",
-    "test:node": "node --experimental-strip-types --test tests/node/*.test.mjs tests/node/*.test.ts",
+    "test:node": "node --experimental-strip-types --import ./tests/node/register-alias.mjs --test tests/node/*.test.mjs tests/node/*.test.ts",
     "test:marks": "node scripts/measure-marks.mjs",
     "test:integration": "python3 scripts/run_integration.py",
     "test": "npm run test:node && npm run test:evm && npm run test:direct"

@@ -71,8 +71,8 @@ export function LivePanel() {
   return (
     <div className="space-y-6">
       <section className="rounded-xl border border-sky-800/30 bg-sky-100 px-4 py-3 text-sm text-sky-950">
-        <strong>只读链上。</strong>
-        这一页不加载记录档判断。没有公开 git-escrow 回执，就没有可读回的法庭决定。
+        <strong>只读余额和字节码。</strong>
+        这一页不加载记录档，也不调用已部署的法庭合约。Studionet 的 get_record 在「公共回执」。
       </section>
       <Marks />
       <Button variant="outline" onClick={() => void load()}>
@@ -89,7 +89,7 @@ export function LivePanel() {
         <>
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">本案判断 <Badge variant="outline">无</Badge></CardTitle>
+              <CardTitle className="flex items-center gap-2">本案判断 <Badge variant="outline">不在此页</Badge></CardTitle>
             </CardHeader>
             <CardContent className="text-sm">{body.reason}</CardContent>
           </Card>

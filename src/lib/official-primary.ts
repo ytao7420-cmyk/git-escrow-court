@@ -53,12 +53,12 @@ export function encodeReviewInner(argumentText: string): Hex {
   ]);
 }
 
-export function encodePrimary(recipient: Hex, inner: Hex): Hex {
+export function encodePrimary(recipient: Hex, inner: Hex, sender: Hex = SENDER): Hex {
   const { fn } = primaryAddTransaction();
   const data = encodeFunctionData({
     abi: [fn],
     functionName: "addTransaction",
-    args: [SENDER, recipient, 5n, 3n, inner],
+    args: [sender, recipient, 5n, 3n, inner],
   } as never) as Hex;
   if (!data.startsWith(PRIMARY_SELECTOR)) {
     throw new Error(`primary selector is ${data.slice(0, 10)}, not ${PRIMARY_SELECTOR}`);

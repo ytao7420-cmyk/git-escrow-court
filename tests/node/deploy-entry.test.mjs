@@ -49,4 +49,12 @@ test("deploy button stays closed while the old selector is pending in MetaMask",
   assert.equal(chain.includes("get_record"), true);
   assert.equal(chain.includes("list_cases"), true);
   assert.equal(page.includes("deployRefusal"), true);
+  const submission = readFileSync("src/app/submission/page.tsx", "utf8");
+  const readme = readFileSync("README.md", "utf8");
+  assert.equal(submission.includes("没有 Studionet 部署交易哈希"), false);
+  assert.equal(submission.includes("0x3245ee1f95c3aad8529a0732b105be5d43fc52c6c726807a18c24241b4d3d76f"), true);
+  assert.equal(submission.includes("127.0.0.1 不是公开网站"), true);
+  assert.equal(readme.includes("run `./start.sh`"), false);
+  assert.equal(readme.includes("There is no public website"), true);
+  assert.equal(readme.includes("http://127.0.0.1:43123"), true);
 });

@@ -5,6 +5,7 @@ const links = [
   { href: "/public", label: "公共回执" },
   { href: "/live", label: "只读链上" },
   { href: "/wallet", label: "部署与读回" },
+  { href: "/repro", label: "新测试案件" },
   { href: "/submission", label: "申报边界" },
 ];
 
