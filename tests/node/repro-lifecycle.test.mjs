@@ -1,0 +1,352 @@
+import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import test from "node:test";
+
+import { GET, POST } from "../../src/app/api/repro-case/route.ts";
+import { buildReproArgument, encodeReproTransaction } from "../../src/lib/repro-case.ts";
+import { runReproLifecycle } from "../../src/lib/repro-lifecycle.ts";
+import { loadReproGuard, saveReproGuard } from "../../src/lib/repro-shared.ts";
+
+const SENDER = "0xcd1dabf73cc80edee8ba664c34a5d636b6e407f9";
+const HASH = `0x${"ab".repeat(32)}`;
+const SOURCE_SHA = "4bd50473ac9a0a0639ad051a1fa3687d025d1e4588913b2dff66cafbcc57758e";
+
+function memoryStorage() {
+  const data = new Map();
+  return {
+    getItem: (key) => data.get(key) ?? null,
+    setItem: (key, value) => data.set(key, value),
+  };
+}
+
+function lookup(hash, status, executionResults) {
+  return {
+    ok: true,
+    found: true,
+    hash,
+    status,
+    resultName: status === "FINALIZED" ? "MAJORITY_AGREE" : null,
+    resultCode: null,
+    executionResults,
+    contractAddress: "0x37383a73306B8F31d9158C3419C29EED856cc1Bc",
+    from: SENDER,
+    to: "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
+    value: "0x0",
+    evmStatus: null,
+    genvmError: null,
+    note: "mock",
+  };
+}
+
+function wallet(overrides = {}) {
+  const methods = [];
+  const request = async ({ method, params }) => {
+    methods.push(method);
+    if (overrides[method]) return overrides[method](params);
+    if (method === "eth_chainId") return "0xf22f";
+    if (method === "eth_requestAccounts") return [SENDER];
+    if (method === "eth_estimateGas") return "0x5208";
+    if (method === "eth_gasPrice") return "0x0";
+    if (method === "eth_getTransactionCount") return "0x3";
+    if (method === "eth_sendTransaction") return HASH;
+    throw new Error(`unexpected ${method}`);
+  };
+  return { methods, request };
+}
+
+test("reproduction case is a new missing-log review_case and matches the contract freeze", () => {
+  const argument = buildReproArgument();
+  assert.equal(argument.caseId, "repro-missing-log-v1");
+  assert.notEqual(argument.caseId, "public-0726369d528e");
+  assert.equal(argument.partnerInput.testResult, null);
+  assert.equal(argument.execution.hostedCourtCase, false);
+  assert.equal(Object.hasOwn(argument, "decision"), false);
+  const python = spawnSync(
+    "python3",
+    [
+      "-c",
+      "import json,sys; from court.canonical import freeze_for; print(json.dumps(freeze_for(json.loads(sys.stdin.read()))))",
+    ],
+    { input: JSON.stringify(argument), encoding: "utf8" },
+  );
+  assert.equal(python.status, 0, python.stderr);
+  const freeze = JSON.parse(python.stdout);
+  assert.equal(argument.freeze.mandateHash, freeze.mandateHash);
+  assert.equal(argument.freeze.rubricHash, freeze.rubricHash);
+  assert.equal(argument.freeze.evidenceHash, freeze.evidenceHash);
+});
+
+test("official SDK encoding calls the deployed contract and does not deploy or use the model method", () => {
+  const encoded = encodeReproTransaction(SENDER);
+  assert.equal(encoded.ok, true);
+  if (!encoded.ok) return;
+  assert.equal(encoded.broadcast, false);
+  assert.equal(encoded.signed, false);
+  assert.equal(encoded.method, "review_case");
+  assert.equal(encoded.selector, "0x27241a99");
+  assert.equal(encoded.recipient, "0x37383a73306B8F31d9158C3419C29EED856cc1Bc");
+  assert.equal(encoded.to, "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575");
+  assert.equal(encoded.data.includes("e71d5196"), false);
+  assert.equal(encoded.data.toLowerCase().includes(Buffer.from("review_case_with_model").toString("hex")), false);
+  assert.equal(encodeReproTransaction("0x0000000000000000000000000000000000000000").ok, false);
+});
+
+test("render and a missing click do not request the wallet", async () => {
+  let called = false;
+  const result = await runReproLifecycle({
+    userConfirmed: false,
+    expectedConsensus: "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
+    request: async () => {
+      called = true;
+      throw new Error("wallet");
+    },
+    encode: async () => {
+      throw new Error("encode");
+    },
+    lookup: async () => {
+      throw new Error("lookup");
+    },
+    readback: async () => {
+      throw new Error("readback");
+    },
+  });
+  assert.equal(called, false);
+  assert.equal(result.sent, false);
+  assert.equal(result.phase, "error");
+});
+
+test("wrong chain, high fee, and the historical case stop before send", async () => {
+  const wrong = wallet({ eth_chainId: async () => "0x1" });
+  const wrongResult = await runReproLifecycle({
+    userConfirmed: true,
+    expectedConsensus: "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
+    request: wrong.request,
+    encode: async () => encodeReproTransaction(SENDER),
+    lookup: async () => lookup(HASH, "FINALIZED", ["SUCCESS"]),
+    readback: async () => {
+      throw new Error("readback");
+    },
+    intervalMs: 0,
+    sleep: async () => {},
+  });
+  assert.deepEqual(wrong.methods, ["eth_chainId"]);
+  assert.equal(wrongResult.sent, false);
+
+  const expensive = wallet({
+    eth_estimateGas: async () => "0x100000",
+    eth_gasPrice: async () => "0x100000000000",
+  });
+  const expensiveResult = await runReproLifecycle({
+    userConfirmed: true,
+    expectedConsensus: "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
+    request: expensive.request,
+    encode: async () => encodeReproTransaction(SENDER),
+    lookup: async () => lookup(HASH, "FINALIZED", ["SUCCESS"]),
+    readback: async () => {
+      throw new Error("readback");
+    },
+    intervalMs: 0,
+    sleep: async () => {},
+  });
+  assert.equal(expensive.methods.includes("eth_sendTransaction"), false);
+  assert.equal(expensiveResult.sent, false);
+
+  const historical = wallet();
+  const historicalResult = await runReproLifecycle({
+    userConfirmed: true,
+    expectedConsensus: "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
+    request: historical.request,
+    encode: async () => ({
+      ok: true,
+      to: "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
+      recipient: "0x37383a73306B8F31d9158C3419C29EED856cc1Bc",
+      data: "0x27241a99",
+      caseId: "public-0726369d528e",
+      method: "review_case",
+      value: "0x0",
+    }),
+    lookup: async () => lookup(HASH, "FINALIZED", ["SUCCESS"]),
+    readback: async () => {
+      throw new Error("readback");
+    },
+  });
+  assert.equal(historical.methods.includes("eth_sendTransaction"), false);
+  assert.match(historicalResult.lines.at(-1) ?? "", /不是新的复现案件/);
+});
+
+test("mocked wallet lifecycle reaches finalized readback without a second send", async () => {
+  const session = wallet();
+  let polls = 0;
+  let reads = 0;
+  const result = await runReproLifecycle({
+    userConfirmed: true,
+    expectedConsensus: "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
+    request: session.request,
+    encode: async (sender) => encodeReproTransaction(sender),
+    lookup: async (hash) => {
+      polls += 1;
+      return lookup(hash, polls === 1 ? "PENDING" : "FINALIZED", polls === 1 ? [] : ["SUCCESS", "SUCCESS"]);
+    },
+    readback: async (caseId) => {
+      reads += 1;
+      assert.equal(caseId, "repro-missing-log-v1");
+      return {
+        ok: true,
+        record: {
+          caseId,
+          decision: "escalate",
+          mandateStatus: "escalated",
+          violations: ["missing-test-result"],
+          reasoningSource: "deterministic-rubric",
+        },
+      };
+    },
+    maxPolls: 2,
+    intervalMs: 0,
+    sleep: async () => {},
+  });
+  assert.equal(session.methods.filter((method) => method === "eth_sendTransaction").length, 1);
+  assert.equal(polls, 2);
+  assert.equal(reads, 1);
+  assert.equal(result.sent, true);
+  assert.equal(result.hash, HASH);
+  assert.equal(result.phase, "read-back");
+  assert.equal(result.decision, "escalate");
+  assert.equal(result.allowAnotherSend, false);
+});
+
+test("rejection, pending, failed execution, and a wrong readback stay unaccepted", async () => {
+  const rejected = wallet({
+    eth_sendTransaction: async () => {
+      throw { code: 4001, message: "User rejected" };
+    },
+  });
+  const rejectedResult = await runReproLifecycle({
+    userConfirmed: true,
+    expectedConsensus: "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
+    request: rejected.request,
+    encode: async (sender) => encodeReproTransaction(sender),
+    lookup: async () => lookup(HASH, "FINALIZED", ["SUCCESS"]),
+    readback: async () => {
+      throw new Error("readback");
+    },
+    intervalMs: 0,
+    sleep: async () => {},
+  });
+  assert.equal(rejectedResult.sent, true);
+  assert.equal(rejectedResult.hash, null);
+  assert.equal(rejectedResult.allowAnotherSend, true);
+  assert.equal(rejectedResult.phase, "error");
+
+  const pending = wallet();
+  let pendingReads = 0;
+  const pendingResult = await runReproLifecycle({
+    userConfirmed: true,
+    expectedConsensus: "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
+    request: pending.request,
+    encode: async (sender) => encodeReproTransaction(sender),
+    lookup: async (hash) => lookup(hash, "PENDING", []),
+    readback: async () => {
+      pendingReads += 1;
+      throw new Error("readback");
+    },
+    maxPolls: 2,
+    intervalMs: 0,
+    sleep: async () => {},
+  });
+  assert.equal(pending.methods.filter((method) => method === "eth_sendTransaction").length, 1);
+  assert.equal(pendingReads, 0);
+  assert.equal(pendingResult.phase, "pending");
+  assert.equal(pendingResult.decision, null);
+
+  const failed = wallet();
+  const failedResult = await runReproLifecycle({
+    userConfirmed: true,
+    expectedConsensus: "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
+    request: failed.request,
+    encode: async (sender) => encodeReproTransaction(sender),
+    lookup: async (hash) => lookup(hash, "FINALIZED", ["ERROR"]),
+    readback: async () => {
+      throw new Error("readback");
+    },
+    maxPolls: 1,
+    intervalMs: 0,
+    sleep: async () => {},
+  });
+  assert.equal(failedResult.phase, "error");
+  assert.equal(failedResult.decision, null);
+
+  const wrong = wallet();
+  const wrongResult = await runReproLifecycle({
+    userConfirmed: true,
+    expectedConsensus: "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
+    request: wrong.request,
+    encode: async (sender) => encodeReproTransaction(sender),
+    lookup: async (hash) => lookup(hash, "FINALIZED", ["SUCCESS"]),
+    readback: async () => ({
+      ok: true,
+      record: {
+        caseId: "repro-missing-log-v1",
+        decision: "continue",
+        mandateStatus: "active",
+        violations: [],
+        reasoningSource: "model-agreed-with-rubric",
+      },
+    }),
+    maxPolls: 1,
+    intervalMs: 0,
+    sleep: async () => {},
+  });
+  assert.equal(wrongResult.phase, "error");
+  assert.notEqual(wrongResult.decision, "escalate");
+  assert.match(wrongResult.lines.at(-1) ?? "", /不能写成测试通过/);
+});
+
+test("the encode route does not call the network and a stored hash keeps the button locked", async () => {
+  const original = globalThis.fetch;
+  let fetches = 0;
+  globalThis.fetch = async () => {
+    fetches += 1;
+    throw new Error("network");
+  };
+  try {
+    const described = await GET();
+    const body = await described.json();
+    assert.equal(body.broadcast, false);
+    assert.equal(body.caseId, "repro-missing-log-v1");
+    assert.equal(body.historicalCaseId, "public-0726369d528e");
+    const refused = await POST(new Request("http://127.0.0.1/api/repro-case", { method: "POST", body: JSON.stringify({ sender: SENDER, broadcast: true }) }));
+    assert.equal(refused.status, 405);
+    const encoded = await POST(new Request("http://127.0.0.1/api/repro-case", { method: "POST", body: JSON.stringify({ sender: SENDER, broadcast: false }) }));
+    const payload = await encoded.json();
+    assert.equal(payload.ok, true);
+    assert.equal(payload.broadcast, false);
+    assert.equal(payload.signed, false);
+    assert.equal(payload.selector, "0x27241a99");
+  } finally {
+    globalThis.fetch = original;
+  }
+  assert.equal(fetches, 0);
+
+  const storage = memoryStorage();
+  saveReproGuard(storage, { hash: HASH, locked: true, lines: ["already"] });
+  const guard = loadReproGuard(storage);
+  assert.equal(guard.locked, true);
+  assert.equal(guard.hash, HASH);
+
+  const route = readFileSync("src/app/api/repro-case/route.ts", "utf8");
+  const page = readFileSync("src/app/repro/page.tsx", "utf8");
+  const panel = readFileSync("src/components/wallet-panel.tsx", "utf8");
+  const submit = readFileSync("src/components/case-submit.tsx", "utf8");
+  const component = readFileSync("src/components/repro-case.tsx", "utf8");
+  assert.equal(route.includes("writeContract"), false);
+  assert.equal(route.includes("studio.genlayer.com"), false);
+  assert.equal(page.includes("eth_sendTransaction"), false);
+  assert.equal(component.includes("useEffect"), true);
+  assert.equal(component.includes("eth_requestAccounts"), false);
+  assert.equal(panel.includes("已部署，禁止再次部署"), true);
+  assert.equal(submit.includes("已写入，禁止再次提交"), true);
+  assert.equal(createHash("sha256").update(readFileSync("contracts/git_escrow_court.py")).digest("hex"), SOURCE_SHA);
+});

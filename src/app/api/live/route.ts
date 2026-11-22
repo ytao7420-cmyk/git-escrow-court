@@ -75,7 +75,7 @@ export async function GET() {
       error: readable ? undefined : "public RPCs did not answer",
       checkedAt: new Date().toISOString(),
       verdict: null,
-      reason: "No public git-escrow receipt was supplied. Live mode does not reuse the local fixture judgment.",
+      reason: "This endpoint reads balances and bytecode only. It does not call the court contract. The stored get_record is on /public.",
       genlayer: { studionet, studioDev },
       arkhai: {
         sepoliaCommitObligation: obligation,
