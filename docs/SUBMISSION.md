@@ -40,7 +40,7 @@ Base Sepolia 官方 `CommitObligation` `0x03d2591DfDf75611AdE94A9a80af61F9BcBfc4
 ## 未完成
 
 - 没有官方托管 case id。没有调用 `api.internetcourt.org`。自主部署或本地 VM 不等于托管法庭。
-- 部署交易和旧案件 `public-0726369d528e` 已经存在。旧的部署按钮和旧案件按钮保持关闭，不能再发这两笔。`/repro` 只准备另一个 caseId `repro-missing-log-v1` 的 `review_case`；页面加载不发送，离线测试也不广播。缺的是官方托管案号，不是旧交易哈希。
+- 部署交易和旧案件 `public-0726369d528e` 已经存在。旧的部署按钮和旧案件按钮保持关闭，不能再发这两笔。`/repro` 为每个标签页生成唯一 `repro-` caseId，等待和重试时不更换，并在发送前只读 `list_cases`。页面加载不发送，离线测试也不广播。没有公开网站。GitHub Pages 不能代替 `npm run build && npm start`。缺的是官方托管案号，不是旧交易哈希。
 - GLSim 在部署之后的 `gen_getContractSchemaForCode` 会返回空的方法表。集成测试改走 GenLayer client 的 `write_contract` / `read_contract`，并用 `tx_execution_succeeded` 确认执行成功。这不是托管网络上的部署。
 - 链上引用的是第三方 Base Sepolia attestation。本项目没有创建那笔托管 escrow，也不能写成“预言机已实测仲裁”或“测试已经通过”。
 - `0xc5c132B69f57dAAAb75d9ebA86cab504b272Ccbc` 在 Ethereum Sepolia 上 `eth_getCode` 为 `0x`。官方部署文件把它记为 deployer，skill 文本把它称为 public demo oracle。两者同时成立，不能再把它说成一个有代码的在线合约。

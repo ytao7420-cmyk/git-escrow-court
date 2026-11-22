@@ -31,7 +31,7 @@ export default function SubmissionPage() {
       <section>
         <h2 className="text-2xl">新测试案件复现</h2>
         <p className="mt-3">
-          /repro 使用另一个 caseId repro-missing-log-v1，只准备 review_case，不重复 public-0726369d528e，也不再部署。Studionet 61999 是测试网，value 为 0。没有测试日志时的预期仍是 escalate，不是测试通过。页面加载不发送。离线测试里的 mock 哈希不是新的链上交易。
+          /repro 为每个标签页生成 repro- 加 32 位十六进制的 caseId，只准备 review_case，不重复 public-0726369d528e，也不再部署。同一标签页在等待和重试时沿用这个 id。Studionet 61999 是测试网，value 为 0，发送前核对 0.001 测试 GEN。没有测试日志时的预期仍是 escalate，不是测试通过。页面加载不发送。离线测试里的 mock 哈希不是新的链上交易。没有公开网站，127.0.0.1 不能填进网站栏。GitHub Pages 不能运行这些 Node 接口。
         </p>
       </section>
       <section>

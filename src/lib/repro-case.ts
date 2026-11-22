@@ -10,7 +10,7 @@ import {
   primaryAddTransaction,
 } from "@/lib/official-primary";
 
-import { COURT_ADDRESS, REPRO_CASE_ID, SCHEMA_TEXT } from "@/lib/repro-shared";
+import { COURT_ADDRESS, HISTORICAL_CASE_ID, SCHEMA_TEXT, isReproCaseId } from "@/lib/repro-shared";
 
 export type ReproArgument = {
   caseId: string;
@@ -45,9 +45,9 @@ function sha256(text: string): string {
   return createHash("sha256").update(text).digest("hex");
 }
 
-function draftBody(): Omit<ReproArgument, "freeze"> {
+function draftBody(caseId: string): Omit<ReproArgument, "freeze"> {
   return {
-    caseId: REPRO_CASE_ID,
+    caseId,
     execution: {
       mode: "studionet-repro",
       hostedCourtCase: false,
@@ -55,7 +55,7 @@ function draftBody(): Omit<ReproArgument, "freeze"> {
       createdByThisProject: false,
     },
     mandate: {
-      id: "mandate-repro-missing-log-v1",
+      id: `mandate-${caseId}`,
       objective: "Show one new Studionet review_case write for a receipt that has no test log.",
       authoritySummary: "Do not deploy, do not repeat public-0726369d528e, and do not invent a passing test log.",
       prohibitedActions: [
@@ -75,7 +75,7 @@ function draftBody(): Omit<ReproArgument, "freeze"> {
       partner: "arkhai",
       interface: "git-escrows",
       receipt: {
-        caseId: REPRO_CASE_ID,
+        caseId,
         source: "lifecycle-repro",
         network: "studionet",
         "tests-repo": "file://fixtures/repro/missing-log",
@@ -95,8 +95,9 @@ function draftBody(): Omit<ReproArgument, "freeze"> {
   };
 }
 
-export function buildReproArgument(): ReproArgument {
-  const draft = draftBody();
+export function buildReproArgument(caseId: string): ReproArgument {
+  if (!isReproCaseId(caseId)) throw new Error("invalid repro case id");
+  const draft = draftBody(caseId);
   const evidence = { receipt: draft.partnerInput.receipt, testResult: draft.partnerInput.testResult };
   return {
     ...draft,
@@ -123,7 +124,9 @@ function collectKeys(value: unknown, keys: string[]) {
 
 export function assertReproSafe(argument: ReproArgument): { ok: true } | { ok: false; error: string } {
   const caseId = String(argument.caseId);
-  if (caseId !== REPRO_CASE_ID) return { ok: false, error: "新案件 id 不是 repro-missing-log-v1。没有发送。" };
+  if (!isReproCaseId(caseId) || caseId === HISTORICAL_CASE_ID) {
+    return { ok: false, error: "案件 id 不是这次复现保存的唯一 id。没有发送。" };
+  }
   if (argument.execution.hostedCourtCase !== false || argument.execution.publicTestnetReceipt !== false) {
     return { ok: false, error: "复现案件不能声称托管案号或已有测试网回执。没有发送。" };
   }
@@ -156,13 +159,13 @@ export function assertReproSafe(argument: ReproArgument): { ok: true } | { ok: f
   return { ok: true };
 }
 
-export function encodeReproTransaction(sender: string):
+export function encodeReproTransaction(sender: string, caseId: string):
   | {
       ok: true;
       broadcast: false;
       signed: false;
       method: "review_case";
-      caseId: typeof REPRO_CASE_ID;
+      caseId: string;
       to: `0x${string}`;
       recipient: typeof COURT_ADDRESS;
       data: `0x${string}`;
@@ -170,10 +173,11 @@ export function encodeReproTransaction(sender: string):
       value: "0x0";
     }
   | { ok: false; error: string } {
+  if (!isReproCaseId(caseId)) return { ok: false, error: "案件 id 不是这次复现保存的唯一 id。没有发送。" };
   if (!/^0x[0-9a-fA-F]{40}$/.test(sender) || sender.toLowerCase() === ZERO) {
     return { ok: false, error: "发送账户不是可用地址。没有发送。" };
   }
-  const argument = buildReproArgument();
+  const argument = buildReproArgument(caseId);
   const safe = assertReproSafe(argument);
   if (!safe.ok) return safe;
   const { to } = primaryAddTransaction();
@@ -199,7 +203,7 @@ export function encodeReproTransaction(sender: string):
     broadcast: false,
     signed: false,
     method: "review_case",
-    caseId: REPRO_CASE_ID,
+    caseId,
     to,
     recipient: COURT_ADDRESS,
     data,

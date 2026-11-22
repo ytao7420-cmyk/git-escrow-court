@@ -1,7 +1,7 @@
 import { formatProviderError, hexQuantity, isTxHash } from "@/lib/wallet-transport";
 import type { GenLayerLookup } from "@/lib/genlayer-tx";
 
-import { COURT_ADDRESS, FEE_CAP_WEI, REPRO_CASE_ID } from "@/lib/repro-shared";
+import { COURT_ADDRESS, FEE_CAP_WEI, isReproCaseId } from "@/lib/repro-shared";
 
 export type ReproEncode =
   | {
@@ -57,11 +57,14 @@ function asciiHex(text: string): string {
 
 export async function runReproLifecycle(input: {
   userConfirmed: boolean;
+  caseId: string;
   expectedConsensus: string;
   request: (args: RequestArgs) => Promise<unknown>;
   encode: (sender: string) => Promise<ReproEncode>;
+  probe: (caseId: string) => Promise<{ ok: true; exists: boolean } | { ok: false; error: string }>;
   lookup: (hash: string) => Promise<GenLayerLookup>;
   readback: (caseId: string) => Promise<ReproReadback>;
+  onBeforeSend?: () => void;
   maxPolls?: number;
   intervalMs?: number;
   sleep?: (ms: number) => Promise<void>;
@@ -74,6 +77,9 @@ export async function runReproLifecycle(input: {
     lines: [],
     decision: null,
   };
+  if (!isReproCaseId(input.caseId)) {
+    return stop(result, "案件 id 不是这次复现保存的唯一 id。没有发送。");
+  }
   if (!input.userConfirmed) {
     return stop(result, "还没有用户点击。没有连接钱包，也没有发送。");
   }
@@ -93,8 +99,8 @@ export async function runReproLifecycle(input: {
   const encoded = await input.encode(sender);
   if (!encoded.ok) return stop(result, encoded.error);
   const caseId = String(encoded.caseId);
-  if (caseId !== REPRO_CASE_ID) {
-    return stop(result, "编码结果不是新的复现案件。没有发送。");
+  if (caseId !== input.caseId || !encoded.data.slice(2).toLowerCase().includes(asciiHex(caseId))) {
+    return stop(result, "编码结果不是这次保存的案件。没有发送。");
   }
   if (encoded.method !== "review_case") return stop(result, "编码方法不是 review_case。没有发送。");
   if (encoded.recipient.toLowerCase() !== COURT_ADDRESS.toLowerCase()) {
@@ -109,6 +115,12 @@ export async function runReproLifecycle(input: {
   const body = encoded.data.slice(2).toLowerCase();
   if (body.includes(asciiHex("review_case_with_model")) || !body.includes(asciiHex("review_case"))) {
     return stop(result, "calldata 不是确定性 review_case。没有发送。");
+  }
+
+  const probed = await input.probe(caseId);
+  if (!probed.ok) return stop(result, `${probed.error}。还不能确认这个案件是否已经写入。没有发送。`);
+  if (probed.exists) {
+    return stop(result, "链上已经有这个 caseId。没有再发送。", false);
   }
 
   let gas: unknown;
@@ -139,6 +151,7 @@ export async function runReproLifecycle(input: {
     phase: "awaiting-wallet",
     allowAnotherSend: false,
   });
+  input.onBeforeSend?.();
   let sentHash: unknown;
   try {
     sentHash = await input.request({
@@ -214,7 +227,7 @@ export async function runReproLifecycle(input: {
     phase: "finalized",
   });
 
-  const read = await input.readback(REPRO_CASE_ID);
+  const read = await input.readback(caseId);
   if (!read.ok) {
     return line(result, `${read.error}。get_record 没有读到。没有把执行成功写成判断。`, {
       phase: "error",
@@ -224,7 +237,7 @@ export async function runReproLifecycle(input: {
   const record = read.record;
   const violations = record.violations ?? [];
   if (
-    record.caseId !== REPRO_CASE_ID ||
+    record.caseId !== caseId ||
     record.decision !== "escalate" ||
     record.mandateStatus !== "escalated" ||
     record.reasoningSource !== "deterministic-rubric" ||

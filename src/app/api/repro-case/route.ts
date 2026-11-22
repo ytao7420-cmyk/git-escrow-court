@@ -1,12 +1,20 @@
 import { encodeReproTransaction, buildReproArgument } from "@/lib/repro-case";
 import { primaryAddTransaction } from "@/lib/official-primary";
-import { COURT_ADDRESS, HISTORICAL_CASE_ID, REPRO_CASE_ID } from "@/lib/repro-shared";
+import { COURT_ADDRESS, HISTORICAL_CASE_ID, isReproCaseId } from "@/lib/repro-shared";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+function caseIdFrom(value: string | null): string | null {
+  return value && isReproCaseId(value) ? value : null;
+}
+
+export async function GET(request: Request) {
+  const caseId = caseIdFrom(new URL(request.url).searchParams.get("caseId"));
+  if (!caseId) {
+    return Response.json({ ok: false, error: "需要本次复现保存的唯一 caseId。没有发送。" }, { status: 400 });
+  }
   const { to } = primaryAddTransaction();
-  const argument = buildReproArgument();
+  const argument = buildReproArgument(caseId);
   return Response.json({
     ok: true,
     broadcast: false,
@@ -28,16 +36,22 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => ({}))) as { sender?: string; broadcast?: boolean; send?: boolean };
+  const body = (await request.json().catch(() => ({}))) as {
+    sender?: string;
+    caseId?: string;
+    broadcast?: boolean;
+    send?: boolean;
+  };
   if (body.broadcast === true || body.send === true) {
     return Response.json({ ok: false, error: "这个接口不发送交易。" }, { status: 405 });
   }
+  const caseId = caseIdFrom(body.caseId ?? null);
+  if (!caseId) {
+    return Response.json({ ok: false, error: "需要本次复现保存的唯一 caseId。没有发送。" }, { status: 400 });
+  }
   try {
-    const encoded = encodeReproTransaction(body.sender ?? "");
-    return Response.json(
-      encoded.ok ? { ...encoded, caseId: REPRO_CASE_ID, llm: false } : encoded,
-      { status: encoded.ok ? 200 : 422 },
-    );
+    const encoded = encodeReproTransaction(body.sender ?? "", caseId);
+    return Response.json(encoded.ok ? { ...encoded, llm: false } : encoded, { status: encoded.ok ? 200 : 422 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "encode failed";
     return Response.json({ ok: false, error: message }, { status: 500 });

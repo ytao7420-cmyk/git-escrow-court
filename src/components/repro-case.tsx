@@ -1,11 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { runReproLifecycle, type ReproEncode, type ReproResult } from "@/lib/repro-lifecycle";
-import { emptyReproGuard, loadReproGuard, saveReproGuard, type ReproGuard } from "@/lib/repro-shared";
+import {
+  createReproCaseId,
+  emptyReproGuard,
+  loadReproGuard,
+  reproClickAllowed,
+  saveReproGuard,
+  type ReproGuard,
+} from "@/lib/repro-shared";
 import { formatProviderError, selectMetaMask } from "@/lib/wallet-transport";
 import type { GenLayerLookup } from "@/lib/genlayer-tx";
 
@@ -17,7 +24,6 @@ type Description = {
   historicalCaseId?: string;
   contract?: string;
   expectedDecision?: string;
-  argument?: { partnerInput?: { testResult?: null } };
 };
 
 export function ReproCase() {
@@ -25,11 +31,21 @@ export function ReproCase() {
   const [guard, setGuard] = useState<ReproGuard>(emptyReproGuard());
   const [result, setResult] = useState<ReproResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const sending = useRef(false);
 
   useEffect(() => {
-    setGuard(loadReproGuard(window.sessionStorage));
+    const loaded = loadReproGuard(window.sessionStorage);
+    let next = loaded;
+    if (!loaded.caseId && !loaded.locked && !loaded.hash) {
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      next = { ...loaded, caseId: createReproCaseId(bytes) };
+      saveReproGuard(window.sessionStorage, next);
+    }
+    setGuard(next);
+    if (!next.caseId) return;
     const controller = new AbortController();
-    void fetch("/api/repro-case", { signal: controller.signal })
+    void fetch(`/api/repro-case?caseId=${encodeURIComponent(next.caseId)}`, { signal: controller.signal })
       .then((response) => response.json())
       .then((body: Description) => setDescription(body))
       .catch((error: unknown) => {
@@ -40,7 +56,7 @@ export function ReproCase() {
   }, []);
 
   async function confirm() {
-    if (busy || guard.locked || guard.hash) return;
+    if (sending.current || busy || !reproClickAllowed(guard) || !guard.caseId) return;
     const selected = selectMetaMask((window as Window & { ethereum?: unknown }).ethereum);
     if (!selected.ok) {
       setResult({
@@ -53,7 +69,7 @@ export function ReproCase() {
       });
       return;
     }
-    if (!description?.ok || !description.consensus) {
+    if (!description?.ok || !description.consensus || description.caseId !== guard.caseId) {
       setResult({
         phase: "error",
         sent: false,
@@ -64,48 +80,76 @@ export function ReproCase() {
       });
       return;
     }
+    const caseId = guard.caseId;
+    sending.current = true;
     setBusy(true);
-    const next = await runReproLifecycle({
-      userConfirmed: true,
-      expectedConsensus: description.consensus,
-      request: (args) => selected.provider.request(args),
-      encode: async (sender) => {
-        const response = await fetch("/api/repro-case", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ sender, broadcast: false }),
-        });
-        return (await response.json()) as ReproEncode;
-      },
-      lookup: async (hash) => {
-        const response = await fetch(`/api/tx?hash=${encodeURIComponent(hash)}`);
-        return (await response.json()) as GenLayerLookup;
-      },
-      readback: async (caseId) => {
-        const response = await fetch("/api/chain-record");
-        const body = (await response.json()) as {
-          ok: boolean;
-          error?: string;
-          records?: { caseId: string; record: { caseId?: string; decision?: string; mandateStatus?: string; violations?: string[]; reasoningSource?: string } | null }[];
-        };
-        if (!body.ok) return { ok: false as const, error: body.error || "链上读取失败" };
-        const found = body.records?.find((item) => item.caseId === caseId)?.record;
-        if (!found) return { ok: false as const, error: "list_cases 里还没有这个新案件" };
-        return { ok: true as const, record: found };
-      },
-      intervalMs: 3_000,
-      sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-    });
-    const nextGuard: ReproGuard = next.hash
-      ? { hash: next.hash, locked: true, lines: next.lines }
-      : { hash: null, locked: !next.allowAnotherSend, lines: next.lines };
-    saveReproGuard(window.sessionStorage, nextGuard);
-    setGuard(nextGuard);
-    setResult(next);
-    setBusy(false);
+    try {
+      const next = await runReproLifecycle({
+        userConfirmed: true,
+        caseId,
+        expectedConsensus: description.consensus,
+        request: (args) => selected.provider.request(args),
+        encode: async (sender) => {
+          const response = await fetch("/api/repro-case", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ sender, caseId, broadcast: false }),
+          });
+          return (await response.json()) as ReproEncode;
+        },
+        probe: async (id) => {
+          const response = await fetch("/api/chain-record");
+          const body = (await response.json()) as { ok?: boolean; error?: string; caseIds?: unknown };
+          if (!response.ok || !body.ok || !Array.isArray(body.caseIds)) {
+            return { ok: false as const, error: body.error || "list_cases 没有读到" };
+          }
+          return { ok: true as const, exists: body.caseIds.includes(id) };
+        },
+        lookup: async (hash) => {
+          const response = await fetch(`/api/tx?hash=${encodeURIComponent(hash)}`);
+          return (await response.json()) as GenLayerLookup;
+        },
+        readback: async (id) => {
+          const response = await fetch("/api/chain-record");
+          const body = (await response.json()) as {
+            ok: boolean;
+            error?: string;
+            records?: { caseId: string; record: { caseId?: string; decision?: string; mandateStatus?: string; violations?: string[]; reasoningSource?: string } | null }[];
+          };
+          if (!body.ok) return { ok: false as const, error: body.error || "链上读取失败" };
+          const found = body.records?.find((item) => item.caseId === id)?.record;
+          if (!found) return { ok: false as const, error: "list_cases 里还没有这个新案件" };
+          return { ok: true as const, record: found };
+        },
+        onBeforeSend: () => {
+          const locked: ReproGuard = {
+            caseId,
+            hash: null,
+            locked: true,
+            lines: ["已经请求钱包。刷新后按钮保持关闭，避免同一案件再发一次。"],
+          };
+          saveReproGuard(window.sessionStorage, locked);
+          setGuard(locked);
+        },
+        intervalMs: 3_000,
+        sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+      });
+      const nextGuard: ReproGuard = {
+        caseId,
+        hash: next.hash,
+        locked: Boolean(next.hash) || !next.allowAnotherSend,
+        lines: next.lines,
+      };
+      saveReproGuard(window.sessionStorage, nextGuard);
+      setGuard(nextGuard);
+      setResult(next);
+    } finally {
+      sending.current = false;
+      setBusy(false);
+    }
   }
 
-  const locked = guard.locked || Boolean(guard.hash) || busy;
+  const locked = !reproClickAllowed(guard) || busy;
 
   return (
     <Card>
@@ -113,12 +157,12 @@ export function ReproCase() {
         <CardTitle>新测试案件，不是旧的终局记录</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
-        <p>
-          caseId {description?.caseId ?? "repro-missing-log-v1"}。旧案件 {description?.historicalCaseId ?? "public-0726369d528e"} 不在这笔交易里。
+        <p className="break-all">
+          caseId {guard.caseId ?? "尚未生成"}。旧案件 {description?.historicalCaseId ?? "public-0726369d528e"} 不在这笔交易里。
           合约 {description?.contract ?? "0x37383a73306B8F31d9158C3419C29EED856cc1Bc"}。方法只有 review_case。
         </p>
         <p>
-          Studionet 61999 是测试网。value 是 0，费用上限 0.001 测试 GEN，不转移真实资产。testResult 是 null，所以预期是 {description?.expectedDecision ?? "escalate"} / missing-test-result。缺日志不是测试通过，也不是 LLM 判决。
+          每个标签页第一次打开时生成自己的案件 id，并在等待、拒绝后的再次点击和刷新时继续用它。链上已经有这个 id 就不会再发。Studionet 61999 是测试网。value 是 0，发送前按 gas 和 gasPrice 核对 0.001 测试 GEN 上限。testResult 是 null，所以预期是 {description?.expectedDecision ?? "escalate"} / missing-test-result。缺日志不是测试通过，也不是 LLM 判决。
         </p>
         <p>打开这一页只读取本地说明。它不连接钱包，不签名，也不发送。下面的按钮要你自己点击，钱包里还要再确认一次。</p>
         {guard.hash ? <p className="break-all font-mono text-xs">已有哈希 {guard.hash}。按钮保持关闭。</p> : null}

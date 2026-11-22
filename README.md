@@ -22,7 +22,7 @@ Open http://127.0.0.1:43123.
 - `/live` public RPC balances and bytecode only. It does not call the court contract and it does not show a fixture judgment.
 - `/wallet` the already broadcast Studionet 61999 deploy. The page shows `to`, selector, data bytes, source SHA, value, chain, and the fee cap. The deploy button stays disabled and does not call `eth_sendTransaction`. An existing hash can be looked up. Value was 0 and the fee cap was 0.001 test GEN.
 - `/submission` which chain facts exist, and which claims this repository does not make.
-- `/repro` a separate, still unsigned Studionet `review_case` for case `repro-missing-log-v1`. Loading it does not connect a wallet or send. The old deploy button and the old case button stay disabled.
+- `/repro` a separate Studionet `review_case`. Each tab creates its own `repro-` plus 32 hex character case id and keeps that id while a send is pending or retried. Loading it does not connect a wallet or send. The old deploy button and the old case button stay disabled.
 
 The exact unsigned deploy transaction is `fixtures/public/unsigned-deploy.json`. Its contract source SHA256 stays `4bd50473ac9a0a0639ad051a1fa3687d025d1e4588913b2dff66cafbcc57758e`.
 
@@ -34,9 +34,25 @@ The case input is a third-party Base Sepolia fulfillment, uid `0x0726369d528e023
 
 ## New test-case reproduction
 
-`/repro` is not the finalized case above. It targets the same deployed contract, uses `review_case` only, and uses case id `repro-missing-log-v1`. Studionet 61999 is a testnet. The transaction value is 0 and the fee cap is 0.001 test GEN. It does not move real assets. `testResult` is null, so the contract rubric returns `escalate` / `missing-test-result` / `deterministic-rubric`. A missing log is not a passed test and not an LLM judgment.
+`/repro` is not the finalized case above. It targets the same deployed contract and uses `review_case` only. The case id is generated in the browser tab, not hardcoded. A tab keeps that same id for a pending send and for an explicit retry, and it reads `list_cases` before sending so an id that is already stored is not sent again. Reloading after a hash, or after the wallet request has started, leaves the button closed. Studionet 61999 is a testnet. The transaction value is 0. Before `eth_sendTransaction`, the page multiplies the gas limit by `gasPrice` and refuses the click when that fee is above 0.001 test GEN. A wrong chain is refused. `testResult` is null, so the contract rubric returns `escalate` / `missing-test-result` / `deterministic-rubric`. A missing log is not a passed test and not an LLM judgment. `FINALIZED` is not that judgment; `get_record` is read only after every `execution_result` is `SUCCESS`.
 
 The page does not connect, sign, or send during render. A person has to click, and the wallet has to confirm. `npm run test:node` covers that lifecycle with mocks. Those tests do not broadcast, and a mock hash is not an on-chain acceptance. Do not deploy again, and do not submit `public-0726369d528e` again.
+
+## Public website
+
+There is no public website for this repository. Do not enter `http://127.0.0.1:43123` as the project website. That address is only the process started above.
+
+GitHub Pages cannot host this app as it is built. `next.config.ts` sets `output: "standalone"`. Chain reads and the unsigned `review_case` encoding go through Node route handlers (`/api/chain-record`, `/api/tx`, `/api/live`, `/api/repro-case`), and `/` runs the local GenVM direct VM. A static export would remove those handlers. Replacing the live read with a frozen JSON judgment would not be the chain result. A read-only `eth_chainId` from `https://ytao7420-cmyk.github.io` is allowed by the Studionet RPC CORS response, but that does not make this Next server a Pages site.
+
+When someone chooses a Node host they already control, the build is:
+
+```bash
+npm ci
+npm run build
+npm run start
+```
+
+`npm start` listens on `0.0.0.0:43123`. Those commands do not publish DNS, do not create a GitHub Pages site, and do not send a transaction. `/public` still reads Studionet through the server.
 
 ## Reproduce the tests
 
