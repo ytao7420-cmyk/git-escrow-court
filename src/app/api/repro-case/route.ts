@@ -1,3 +1,5 @@
+import { encodePublicEnabled, withEncodeSlot } from "@/lib/encode-gate";
+import { readLimitedJson } from "@/lib/limited-json";
 import { encodeReproTransaction, buildReproArgument } from "@/lib/repro-case";
 import { primaryAddTransaction } from "@/lib/official-primary";
 import { COURT_ADDRESS, HISTORICAL_CASE_ID, isReproCaseId } from "@/lib/repro-shared";
@@ -36,12 +38,18 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => ({}))) as {
-    sender?: string;
-    caseId?: string;
-    broadcast?: boolean;
-    send?: boolean;
-  };
+  const limited = await readLimitedJson(request);
+  if (!limited.ok) return Response.json({ ok: false, error: limited.error }, { status: limited.status });
+  if (!encodePublicEnabled()) {
+    return Response.json(
+      { ok: false, error: "公开编码默认关闭。只读页面不受影响。", encodeEnabled: false },
+      { status: 403 },
+    );
+  }
+  const record = limited.value !== null && typeof limited.value === "object" && !Array.isArray(limited.value)
+    ? limited.value as { sender?: string; caseId?: string; broadcast?: boolean; send?: boolean }
+    : {};
+  const body = record;
   if (body.broadcast === true || body.send === true) {
     return Response.json({ ok: false, error: "这个接口不发送交易。" }, { status: 405 });
   }
@@ -50,7 +58,9 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: "需要本次复现保存的唯一 caseId。没有发送。" }, { status: 400 });
   }
   try {
-    const encoded = encodeReproTransaction(body.sender ?? "", caseId);
+    const slot = await withEncodeSlot(async () => encodeReproTransaction(body.sender ?? "", caseId));
+    if (!slot.ok) return Response.json({ ok: false, error: slot.error }, { status: slot.status });
+    const encoded = slot.value;
     return Response.json(encoded.ok ? { ...encoded, llm: false } : encoded, { status: encoded.ok ? 200 : 422 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "encode failed";

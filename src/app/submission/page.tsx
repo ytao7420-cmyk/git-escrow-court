@@ -4,7 +4,7 @@ export default function SubmissionPage() {
       <div>
         <h1 className="text-4xl">申报准备，不是已提交</h1>
         <p className="mt-3 max-w-3xl text-muted-foreground">
-          Mission 101 截止 2026-11-30。builder-wg 身份在本轮开始时仍未同步。这里不声称资格已经成立，也不声称材料已经送出。
+          当前准备的是普通 Projects 41，不依赖 builder-wg。专项 Mission 101 仍要等资格确认，这一页不声称 101 已经获资格，也不声称 Portal 已提交、GLP 或 Accepted。
         </p>
       </div>
       <section>
@@ -21,8 +21,9 @@ export default function SubmissionPage() {
       <section>
         <h2 className="text-2xl">还没有做，也不能写成已经做了</h2>
         <ul className="mt-3 list-disc space-y-2 pl-5">
-          <li>没有调用 api.internetcourt.org，没有官方托管 case id。本机 127.0.0.1 不是公开网站。</li>
-          <li>没有新的部署或新的案件写入。已有两笔交易不能再发一次。</li>
+          <li>公开只读演示是 https://git-escrow-court.vercel.app 。127.0.0.1 不是公开网站，不能填进网站栏。</li>
+          <li>没有调用 api.internetcourt.org，没有官方托管 case id。Portal 还没有提交。</li>
+          <li>另有一笔已写入的复现交易 0xd72bc727c5a0c16bef3326d0f4a18593b22774f4d5f79553447d4bc6aefeea68，案件 repro-237ab1a3788efdecb055ce97ef351eb6。公开页要用当次 RPC 核验终局和 get_record，读失败就是未验证。它不能再发送。</li>
           <li>Base Sepolia attestation 0x0726369d528e02356e76a081a5c164c217cd219f47a7217811530107face2c7b 是第三方记录。这个钱包没有创建那笔托管 escrow。Ethereum Sepolia 上 0xc5c132B69f57dAAAb75d9ebA86cab504b272Ccbc 没有合约代码。</li>
           <li>没有改 Witnessboard、ReleaseProof、原站、DNS、旧贡献或旧合约。0xd76aa609ae29461303aBDae59974FbC7aAbC27A7 只出现在旧证据的只读说明里。</li>
           <li>没有把这份材料写成已经申报成功。本地 pass、warn、revoke 夹具是本仓库自己的 add 测试；链上那一笔用的是上面的第三方回执，而且因为没有测试日志而 escalate。</li>
@@ -31,7 +32,7 @@ export default function SubmissionPage() {
       <section>
         <h2 className="text-2xl">新测试案件复现</h2>
         <p className="mt-3">
-          /repro 为每个标签页生成 repro- 加 32 位十六进制的 caseId，只准备 review_case，不重复 public-0726369d528e，也不再部署。同一标签页在等待和重试时沿用这个 id。Studionet 61999 是测试网，value 为 0，发送前核对 0.001 测试 GEN。没有测试日志时的预期仍是 escalate，不是测试通过。页面加载不发送。离线测试里的 mock 哈希不是新的链上交易。没有公开网站，127.0.0.1 不能填进网站栏。GitHub Pages 不能运行这些 Node 接口。
+          /repro 为每个新标签页生成自己的 caseId，不把已经写入的 repro-237ab1a3788efdecb055ce97ef351eb6 变成另一笔可发送案件。Studionet 61999，value 为 0，发送前核对 0.001 测试 GEN。公开编码 POST /api/repro-case 默认关闭；Hobby 计划没有平台级限速。进程内并发上限只作用于当前实例，不是全局限流。请求体硬上限 32KiB。没有测试日志时的预期仍是 escalate，不是测试通过。
         </p>
       </section>
       <section>
