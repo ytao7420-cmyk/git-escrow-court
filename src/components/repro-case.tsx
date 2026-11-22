@@ -164,7 +164,7 @@ export function ReproCase() {
         <p>
           每个标签页第一次打开时生成自己的案件 id，并在等待、拒绝后的再次点击和刷新时继续用它。链上已经有这个 id 就不会再发。Studionet 61999 是测试网。value 是 0，发送前按 gas 和 gasPrice 核对 0.001 测试 GEN 上限。testResult 是 null，所以预期是 {description?.expectedDecision ?? "escalate"} / missing-test-result。缺日志不是测试通过，也不是 LLM 判决。
         </p>
-        <p>打开这一页只读取本地说明。它不连接钱包，不签名，也不发送。下面的按钮要你自己点击，钱包里还要再确认一次。</p>
+        <p>打开这一页只读取本地说明。它不连接钱包，不签名，也不发送。新标签页各自生成 caseId；已经写入的那一笔不在这里重发，只读核验在「公共回执」。公开编码默认关闭，未打开时服务器不返回可签名 calldata。</p>
         {guard.hash ? <p className="break-all font-mono text-xs">已有哈希 {guard.hash}。按钮保持关闭。</p> : null}
         <Button type="button" disabled={locked} onClick={() => void confirm()}>
           我确认，请钱包签名这笔新案件

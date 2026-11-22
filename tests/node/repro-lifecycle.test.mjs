@@ -1,3 +1,5 @@
+process.env.REPRO_ENCODE_PUBLIC = "1";
+
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";

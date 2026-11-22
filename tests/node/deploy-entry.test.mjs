@@ -55,6 +55,8 @@ test("deploy button stays closed while the old selector is pending in MetaMask",
   assert.equal(submission.includes("0x3245ee1f95c3aad8529a0732b105be5d43fc52c6c726807a18c24241b4d3d76f"), true);
   assert.equal(submission.includes("127.0.0.1 不是公开网站"), true);
   assert.equal(readme.includes("run `./start.sh`"), false);
-  assert.equal(readme.includes("There is no public website"), true);
+  assert.equal(readme.includes("https://git-escrow-court.vercel.app"), true);
+  assert.equal(readme.includes("Do not enter `http://127.0.0.1:43123` as the project website"), true);
+  assert.equal(readme.includes("Hobby has no platform rate limit") || readme.includes("no platform rate limiting"), true);
   assert.equal(readme.includes("http://127.0.0.1:43123"), true);
 });

@@ -2,11 +2,11 @@ import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 
 import { parseGenLayerTransaction } from "@/lib/genlayer-tx";
+import { FROZEN_CASE_TXS, HISTORICAL_CASE_TX, executionSucceeded } from "@/lib/public-reads";
 
 export const runtime = "nodejs";
 
 const CONTRACT = "0x37383a73306B8F31d9158C3419C29EED856cc1Bc";
-const CASE_TX = "0xf95e4d26e5cb3aaa836b0e3632c606da0f4e476d3fb98c6844fbea73818e1fc7";
 const RPC = "https://studio.genlayer.com/api";
 
 async function rpc(method: string, params: unknown[]) {
@@ -44,8 +44,35 @@ export async function GET() {
       }
       records.push({ caseId, raw, record });
     }
-    const tx = await rpc("eth_getTransactionByHash", [CASE_TX]);
-    const receipt = await rpc("eth_getTransactionReceipt", [CASE_TX]).catch(() => null);
+    const reads = await Promise.all(FROZEN_CASE_TXS.map(async (item) => {
+      try {
+        const tx = await rpc("eth_getTransactionByHash", [item.hash]);
+        const receipt = await rpc("eth_getTransactionReceipt", [item.hash]).catch(() => null);
+        const transaction = parseGenLayerTransaction(tx, receipt, item.hash);
+        return {
+          caseId: item.caseId,
+          hash: item.hash,
+          frozenIdentifier: true,
+          note: item.note,
+          verified: transaction.found,
+          executionOk: executionSucceeded(transaction.executionResults) && transaction.status === "FINALIZED",
+          error: transaction.found ? undefined : "这次 RPC 没有找到该交易。没有用冻结记录冒充终局。",
+          transaction,
+        };
+      } catch (error) {
+        return {
+          caseId: item.caseId,
+          hash: item.hash,
+          frozenIdentifier: true,
+          note: item.note,
+          verified: false,
+          executionOk: false,
+          error: error instanceof Error ? error.message : "交易读取失败。没有用冻结记录冒充终局。",
+          transaction: null,
+        };
+      }
+    }));
+    const historical = reads.find((item) => item.hash === HISTORICAL_CASE_TX);
     return Response.json({
       ok: true,
       source: RPC,
@@ -54,7 +81,8 @@ export async function GET() {
       owner: String(owner),
       caseIds,
       records,
-      transaction: parseGenLayerTransaction(tx, receipt, CASE_TX),
+      reads,
+      transaction: historical?.transaction ?? null,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "chain read failed";

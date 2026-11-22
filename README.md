@@ -6,7 +6,7 @@ The UI separates that recorded fixture from public RPC reads. A local run is not
 
 ## Run the UI
 
-Clone this repository and run it on your own machine. There is no public website. `http://127.0.0.1:43123` is only the process started below.
+Clone this repository and run it on your own machine. `http://127.0.0.1:43123` is only that local process. The public read-only demo is https://git-escrow-court.vercel.app . Do not enter the local address as the project website.
 
 ```bash
 python3 -m pip install -r requirements.txt
@@ -40,7 +40,9 @@ The page does not connect, sign, or send during render. A person has to click, a
 
 ## Public website
 
-There is no public website for this repository. Do not enter `http://127.0.0.1:43123` as the project website. That address is only the process started above.
+The read-only demo is https://git-escrow-court.vercel.app . Do not enter `http://127.0.0.1:43123` as the project website. Portal submission, GLP, and Accepted are not claimed. Projects 41 is separate from Mission 101; Mission 101 still needs its own qualification check.
+
+`POST /api/repro-case` is off unless `REPRO_ENCODE_PUBLIC=1`. Turning that on does not publish a transaction. The handler refuses bodies over 32KiB before it parses them, and it allows at most two encodes at a time inside one process. That counter is not a global rate limit: Vercel Hobby has no platform rate limiting, and a new serverless instance starts from zero. `/api/review` and other local-only routes stay unused by the public pages.
 
 GitHub Pages cannot host this app as it is built. `next.config.ts` sets `output: "standalone"`. Chain reads and the unsigned `review_case` encoding go through Node route handlers (`/api/chain-record`, `/api/tx`, `/api/live`, `/api/repro-case`), and `/` runs the local GenVM direct VM. A static export would remove those handlers. Replacing the live read with a frozen JSON judgment would not be the chain result. A read-only `eth_chainId` from `https://ytao7420-cmyk.github.io` is allowed by the Studionet RPC CORS response, but that does not make this Next server a Pages site.
 
